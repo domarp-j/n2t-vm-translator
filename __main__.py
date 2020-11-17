@@ -57,6 +57,11 @@ def to_assembly(line, index, vm_file_base_name):
   if words[0] == "if-goto":
     return vm_parse.parse_if_goto(words)
 
+  if words[0] == "function":
+    return vm_parse.parse_function(words)
+  if words[0] == "return":
+    return vm_parse.parse_return()
+
   if words[0] == "add":
     return vm_parse.parse_add()
   if words[0] == "sub":
@@ -115,13 +120,16 @@ def is_command(line):
   words = line.split()
 
   # Identify commands.
-  if len(words) == 1 and words[0] in A_L_COMMANDS:
-    return True
+  if len(words) == 1:
+    if words[0] in A_L_COMMANDS:
+      return True
+    if words[0] == "return":
+      return True
   elif len(words) == 2:
     if words[0] in ["goto", "if-goto", "label"]:
       return True
   elif len(words) == 3:
-    if words[0] in ["push", "pop"]:
+    if words[0] in ["push", "pop", "function"]:
       return True
 
   if line.strip() != "" and line[:2] != "//":

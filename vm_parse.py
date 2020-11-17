@@ -337,6 +337,91 @@ def parse_if_goto(words):
     'D;JNE'
   ]
 
+def parse_function(words):
+  fname = words[1]
+  local_count = words[2]
+
+  instructions = []
+
+  # Initialize comment and label.
+  instructions = instructions + [
+    f'// function {fname} {local_count}',
+    f'({fname})'
+  ]
+
+  for _ in range(0, int(local_count)):
+    instructions = instructions + parse_push_const(
+      ['push', 'constant', 0]
+    )
+
+  return instructions
+
+def parse_return():
+  return [
+    f'// return',
+    # end_frame = LCL
+    '@LCL',
+    'D=M',
+    '@R13',
+    'M=D',
+    # return_addr = *(end_frame - 5)
+    'D=D-1',
+    'D=D-1',
+    'D=D-1',
+    'D=D-1',
+    'D=D-1',
+    'A=D',
+    'D=M',
+    '@R14',
+    'M=D',
+    # *ARG = pop()
+    '@SP',
+    'M=M-1',
+    'A=M',
+    'D=M',
+    '@ARG',
+    'A=M',
+    'M=D',
+    # SP = ARG + 1
+    '@ARG',
+    'D=M+1',
+    '@SP',
+    'M=D',
+    # THAT = *(end_frame - 1)
+    '@R13',
+    'A=M-1',
+    'D=M',
+    '@THAT',
+    'M=D',
+    # THIS = *(end_frame - 2)
+    '@R13',
+    'D=M-1',
+    'A=D-1',
+    'D=M',
+    '@THIS',
+    'M=D',
+    # ARG = *(end_frame - 3)
+    '@R13',
+    'D=M-1',
+    'D=D-1',
+    'A=D-1',
+    'D=M',
+    '@ARG',
+    'M=D',
+    # LCL = *(end_frame - 4)
+    '@R13',
+    'D=M-1',
+    'D=D-1',
+    'D=D-1',
+    'A=D-1',
+    'D=M',
+    '@LCL',
+    'M=D',
+    # goto return_addr
+    '@R14',
+    'A=M'
+  ]
+
 def not_found(line):
   return [
     '// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
