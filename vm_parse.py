@@ -307,6 +307,36 @@ def parse_pop_static(words, vm_file_base_name):
     'M=D'
   ]
 
+def parse_label(words):
+  label_name = words[1]
+
+  return [
+    f'// label {label_name}',
+    f'({label_name})'
+  ]
+
+def parse_goto(words):
+  label_name = words[1]
+
+  return [
+    f'// goto {label_name}',
+    f'@{label_name}',
+    '0;JMP'
+  ]
+
+def parse_if_goto(words):
+  label_name = words[1]
+
+  return [
+    f'// if-goto {label_name}',
+    '@SP',
+    'M=M-1',
+    'A=M',
+    'D=M',
+    f'@{label_name}',
+    'D;JNE'
+  ]
+
 def not_found(line):
   return [
     '// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',

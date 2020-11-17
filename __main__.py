@@ -50,6 +50,13 @@ def to_assembly(line, index, vm_file_base_name):
     if words[1] in ["local", "argument", "this", "that"]:
       return vm_parse.parse_pop_segment(words)
 
+  if words[0] == "label":
+    return vm_parse.parse_label(words)
+  if words[0] == "goto":
+    return vm_parse.parse_goto(words)
+  if words[0] == "if-goto":
+    return vm_parse.parse_if_goto(words)
+
   if words[0] == "add":
     return vm_parse.parse_add()
   if words[0] == "sub":
@@ -191,7 +198,7 @@ def write_asm_from_dir(vm_dir_name, asm_file_name):
 
 # TO USE:
 # python ./path/to/dir/vm_translator ./path/to/file.vm
-# OR
+# OR:
 # python ./path/to/dir/vm_translator ./path/to/dir_of_vms
 def main():
   vm_input = sys.argv[1]
