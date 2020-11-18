@@ -25,7 +25,8 @@ A_L_COMMANDS = [
 
 # Convert VM code line to Hack assembly.
 # See vm_parse.py for parsing logic.
-def to_assembly(line, index, vm_file_base_name):
+# NOTE: This should probably be wrapped in a Parser object.
+def to_assembly(line, index=None, vm_file_base_name=None):
   words = line.split()
 
   if words[0] == "push":
@@ -61,6 +62,8 @@ def to_assembly(line, index, vm_file_base_name):
     return vm_parse.parse_function(words)
   if words[0] == "return":
     return vm_parse.parse_return()
+  if words[0] == "call":
+    return vm_parse.parse_call(words, index)
 
   if words[0] == "add":
     return vm_parse.parse_add()
@@ -86,7 +89,7 @@ def to_assembly(line, index, vm_file_base_name):
 # Given a file path for a .vm file, e.g. /path/to/stuff_file.vm,
 # or a directory path, e.g. path/to/stuff_dir,
 # Return just the name of the file w/o an extension, e.g. stuff_file
-# or the directory name, e.g. stuff_dir
+# or the directory name, e.g. stuff_dir.
 def extract_from_path(file_path):
   try:
     if file_path[-1] == '/':
@@ -99,7 +102,7 @@ def extract_from_path(file_path):
     return file_path.replace('.vm', '')
 
 # Given a VM instruction,
-# strip out any content preceded by "//".
+# strip out comments (any content preceded by "//").
 def strip_comments(line):
   comment_index = None
 
@@ -129,7 +132,7 @@ def is_command(line):
     if words[0] in ["goto", "if-goto", "label"]:
       return True
   elif len(words) == 3:
-    if words[0] in ["push", "pop", "function"]:
+    if words[0] in ["push", "pop", "function", "call"]:
       return True
 
   if line.strip() != "" and line[:2] != "//":
@@ -185,13 +188,17 @@ def create_asm_for_dir(vm_dir_name):
 def write_asm_from_dir(vm_dir_name, asm_file_name):
   asm_file = open(asm_file_name, 'a')
 
-  for file_name in os.listdir(vm_dir_name):
-    if '.vm' not in file_name:
-      continue
+  vm_files = [
+    file_name
+    for file_name in os.listdir(vm_dir_name)
+    if '.vm' in file_name
+  ]
 
-    asm_file.write(f'// --------------\n')
+  if 'Sys.vm' in vm_files:
+    write_bootstrap_code(asm_file)
+
+  for file_name in vm_files:
     asm_file.write(f'// {vm_dir_name}/{file_name} \n')
-    asm_file.write(f'// --------------\n')
 
     asm_instructions = parse_vm(f'{vm_dir_name}/{file_name}')
 
@@ -199,6 +206,21 @@ def write_asm_from_dir(vm_dir_name, asm_file_name):
       asm_file.write(f'{instruction}\n')
 
   asm_file.close()
+
+def write_bootstrap_code(asm_file):
+  bs_instructions = to_assembly('call Sys.init')
+
+  bs_instructions = [
+    '// bootstrap',
+    # SP = 256
+    '@256',
+    'D=A',
+    '@0',
+    'M=D',
+  ] + bs_instructions
+
+  for instruction in bs_instructions:
+      asm_file.write(f'{instruction}\n')
 
 #######################################
 # MAIN

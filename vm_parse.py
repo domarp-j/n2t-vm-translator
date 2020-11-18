@@ -419,12 +419,89 @@ def parse_return():
     'M=D',
     # goto return_addr
     '@R14',
-    'A=M'
+    'A=M',
+    '0;JMP'
+  ]
+
+def parse_call(words, index):
+  fname = words[1]
+  arg_count = words[2] if len(words) > 2 else 0
+  id = '' if index is None else index
+  return_addr = f'{fname}$return{id}'
+
+  instructions = [
+    f'// call {fname} {arg_count}',
+    # push return_addr
+    f'@{return_addr}',
+    'D=A',
+    '@SP',
+    'A=M',
+    'M=D',
+    '@SP',
+    'M=M+1',
+    # push LCL
+    '@LCL',
+    'D=M',
+    '@SP',
+    'A=M',
+    'M=D',
+    '@SP',
+    'M=M+1',
+    # push ARG
+    '@ARG',
+    'D=M',
+    '@SP',
+    'A=M',
+    'M=D',
+    '@SP',
+    'M=M+1',
+    # push THIS
+    '@THIS',
+    'D=M',
+    '@SP',
+    'A=M',
+    'M=D',
+    '@SP',
+    'M=M+1',
+    # push THAT
+    '@THAT',
+    'D=M',
+    '@SP',
+    'A=M',
+    'M=D',
+    '@SP',
+    'M=M+1',
+    # ARG = SP-5-arg_count (Part 1)
+    '@SP',
+    'D=M-1',
+    'D=D-1',
+    'D=D-1',
+    'D=D-1',
+    'D=D-1',
+    f'// {fname}: handling {arg_count} args'
+  ]
+
+  # ARG = SP-5-arg_count (Part 2)
+  for _ in range(0, int(arg_count)):
+    instructions = instructions + ['D=D-1']
+
+  return instructions + [
+    # ARG = SP-5-arg_count (Part 3)
+    '@ARG',
+    'M=D',
+    # LCL = SP
+    '@SP',
+    'D=M',
+    '@LCL',
+    'M=D',
+    # goto fname
+    f'@{fname}',
+    '0;JMP',
+    # label return_addr
+    f'({return_addr})'
   ]
 
 def not_found(line):
   return [
-    '// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
-    f'// Parser does not recognize the command "{line}"',
-    '// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
+    f'// UNRECOGNIZED COMMAND: {line}',
   ]
